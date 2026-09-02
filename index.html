@@ -3,28 +3,48 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#080e18" />
-  <title>Classic Battleship</title>
+  <meta name="theme-color" content="#050b14" />
+  <meta name="description" content="Classic Battleship tactical naval warfare with dynamic radar FX, procedural sound, and zero-scroll mobile ergonomics." />
+  <title>BATTLESHIP // Tactical Naval Command</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- CRT Scanline & Ambient Radar Layer -->
+  <div class="crt-overlay" aria-hidden="true"></div>
+
   <div class="game-viewport">
-    <!-- Header -->
+    <!-- Top Tactical Nav -->
     <header class="top-nav">
       <div class="brand">
-        <span class="radar-dot"></span>
-        <h1 class="game-title">BATTLESHIP</h1>
+        <span class="radar-ping-dot" id="radarBeacon"></span>
+        <div class="brand-text">
+          <h1 class="game-title">BATTLESHIP</h1>
+          <span class="sub-title">TACTICAL NAVAL COMMAND</span>
+        </div>
       </div>
-      <div class="nav-controls">
-        <button id="soundToggle" class="icon-btn" aria-label="Toggle Sound" title="Sound">
-          <svg id="soundOnIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+
+      <div class="nav-actions">
+        <!-- Sonar Trigger -->
+        <button id="sonarBtn" class="icon-btn" aria-label="Trigger Sonar Ping" title="Ping Sonar">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <circle cx="12" cy="12" r="6"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+          </svg>
+        </button>
+
+        <!-- Audio Toggle -->
+        <button id="soundToggle" class="icon-btn" aria-label="Toggle Tactical Audio" title="Audio">
+          <svg id="soundOnIcon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path>
           </svg>
-          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <svg id="soundOffIcon" class="hidden" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
             <line x1="23" y1="9" x2="17" y2="15"></line>
             <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -33,107 +53,184 @@
       </div>
     </header>
 
-    <!-- Status Banner -->
-    <section class="status-strip">
-      <span id="statusText" class="status-msg">Position your fleet</span>
+    <!-- Tactical Comms Banner -->
+    <section class="comms-strip" aria-live="polite">
+      <div class="comms-content">
+        <span class="comms-prompt">&gt;</span>
+        <span id="commsText" class="comms-msg">FLEET DEPLOYMENT // DRAG OR TAP TO POSITION VESSELS</span>
+      </div>
+      <div class="comms-blip"></div>
     </section>
 
-    <!-- Mobile View Tabs (Hidden on Desktop) -->
-    <nav class="theater-tabs" id="theaterTabs">
-      <button class="tab-btn active" id="tabEnemy" data-view="enemy">
-        TARGET RADAR
-        <span class="fleet-count" id="enemyFleetCount">5</span>
-      </button>
-      <button class="tab-btn" id="tabPlayer" data-view="player">
-        YOUR FLEET
-        <span class="fleet-count" id="playerFleetCount">5</span>
-      </button>
-    </nav>
+    <!-- Battleground Matrix Arena -->
+    <main class="battleground" id="battleground">
+      <!-- High-performance FX Canvas -->
+      <canvas id="fxCanvas" class="fx-canvas"></canvas>
 
-    <!-- Grids Arena -->
-    <main class="battleground">
-      <!-- Enemy Theater -->
+      <!-- Hostile Radar Station -->
       <div class="grid-card enemy-theater" id="enemyCard">
+        <div class="theater-radar-glow"></div>
         <div class="grid-header">
-          <span class="grid-label">RADAR // HOSTILE</span>
+          <div class="grid-status-left">
+            <span class="status-indicator hostile"></span>
+            <span class="grid-label">HOSTILE RADAR // SECTOR 0-9</span>
+          </div>
           <div class="fleet-indicators" id="enemyFleetPills"></div>
         </div>
+
         <div class="grid-wrapper">
-          <div class="axis-y" id="enemyAxisY"></div>
+          <div class="axis-y" id="enemyAxisY" aria-hidden="true"></div>
           <div class="grid-main">
-            <div class="axis-x" id="enemyAxisX"></div>
-            <div class="matrix" id="enemyGrid" role="grid"></div>
+            <div class="axis-x" id="enemyAxisX" aria-hidden="true"></div>
+            <div class="matrix" id="enemyGrid" role="grid" aria-label="Enemy Radar Grid"></div>
           </div>
         </div>
       </div>
 
-      <!-- Player Theater -->
+      <!-- Friendly Fleet Station -->
       <div class="grid-card player-theater active" id="playerCard">
         <div class="grid-header">
-          <span class="grid-label">DEFENSE // FRIENDLY</span>
+          <div class="grid-status-left">
+            <span class="status-indicator friendly"></span>
+            <span class="grid-label">HARBOR DEFENSE // FRIENDLY FLEET</span>
+          </div>
           <div class="fleet-indicators" id="playerFleetPills"></div>
         </div>
+
         <div class="grid-wrapper">
-          <div class="axis-y" id="playerAxisY"></div>
+          <div class="axis-y" id="playerAxisY" aria-hidden="true"></div>
           <div class="grid-main">
-            <div class="axis-x" id="playerAxisX"></div>
-            <div class="matrix" id="playerGrid" role="grid"></div>
+            <div class="axis-x" id="playerAxisX" aria-hidden="true"></div>
+            <div class="matrix" id="playerGrid" role="grid" aria-label="Player Harbor Grid"></div>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- Bottom Controls Deck -->
-    <footer class="controls-deck">
-      <!-- Setup Mode Tools -->
-      <div class="deck-setup" id="setupControls">
-        <button id="rotateBtn" class="action-btn">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 8"></path>
-            <polyline points="21 3 21 8 16 8"></polyline>
-          </svg>
-          <span id="orientationLabel">ROTATE (H)</span>
-        </button>
-        <button id="randomBtn" class="action-btn">RANDOM</button>
-        <button id="startBattleBtn" class="action-btn primary-btn">START BATTLE</button>
+    <!-- Bottom Thumb Deck (Optimized for One-Handed Play) -->
+    <footer class="thumb-deck">
+      <!-- SETUP MODE: Tactical Ship Dock & Deployment Controls -->
+      <div class="deck-section" id="setupControls">
+        <div class="ship-dock-wrapper">
+          <div class="ship-dock" id="shipDock" role="tablist" aria-label="Warship Dock"></div>
+        </div>
+
+        <div class="setup-actions">
+          <button id="rotateBtn" class="action-btn" aria-label="Rotate Selected Ship">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            </svg>
+            <span id="orientationLabel">ROT (H)</span>
+          </button>
+
+          <button id="randomBtn" class="action-btn" aria-label="Auto Scramble Fleet">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 3 21 3 21 8"></polyline>
+              <line x1="4" y1="20" x2="21" y2="3"></line>
+              <polyline points="21 16 21 21 16 21"></polyline>
+              <line x1="15" y1="15" x2="21" y2="21"></line>
+              <line x1="4" y1="4" x2="9" y2="9"></line>
+            </svg>
+            <span>SCRAMBLE</span>
+          </button>
+
+          <button id="startBattleBtn" class="action-btn primary-btn" disabled>
+            <span>ENGAGE BATTLE</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Live Battle Indicators -->
-      <div class="deck-battle hidden" id="battleControls">
-        <div class="quick-metric">
-          <span class="metric-title">ACCURACY</span>
-          <span class="metric-val" id="accuracyVal">0%</span>
+      <!-- BATTLE MODE: Mobile View Switcher & Live Telemetry -->
+      <div class="deck-section hidden" id="battleControls">
+        <!-- Thumb Segmented View Switcher -->
+        <nav class="theater-switcher" id="theaterTabs">
+          <button class="theater-tab active" id="tabEnemy" data-view="enemy">
+            <span class="tab-blip hostile"></span>
+            <span>TARGET RADAR</span>
+            <span class="tab-badge" id="enemyFleetCount">5</span>
+          </button>
+          <button class="theater-tab" id="tabPlayer" data-view="player">
+            <span class="tab-blip friendly"></span>
+            <span>DEFENSE HARBOR</span>
+            <span class="tab-badge" id="playerFleetCount">5</span>
+            <span class="alert-ping hidden" id="defenseAlertPing">!</span>
+          </button>
+        </nav>
+
+        <!-- Live Combat Telemetry Bar -->
+        <div class="battle-metrics">
+          <div class="metric-card">
+            <span class="metric-lbl">SALVOES</span>
+            <span class="metric-num" id="shotsVal">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-lbl">ACCURACY</span>
+            <span class="metric-num" id="accuracyVal">0%</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-lbl">HOSTILE SUNK</span>
+            <span class="metric-num" id="sunkVal">0/5</span>
+          </div>
+          <button id="restartBtn" class="danger-btn" aria-label="Abort Mission" title="Abort Mission">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            <span>ABORT</span>
+          </button>
         </div>
-        <div class="quick-metric">
-          <span class="metric-title">TURNS</span>
-          <span class="metric-val" id="turnsVal">0</span>
-        </div>
-        <button id="rematchQuickBtn" class="action-btn danger-btn">RESTART</button>
       </div>
     </footer>
 
-    <!-- Game End Overlay -->
-    <div class="modal-overlay hidden" id="gameModal">
-      <div class="modal-card">
-        <h2 id="modalTitle" class="modal-title">VICTORY</h2>
-        <p id="modalDesc" class="modal-desc">All enemy vessels have been neutralized.</p>
-        <div class="modal-stats">
-          <div class="stat-item">
-            <span class="stat-label">TURNS</span>
+    <!-- Tactical Debrief Modal (Victory / Defeat) -->
+    <div class="modal-backdrop hidden" id="gameModal" role="dialog" aria-modal="true">
+      <div class="debrief-panel">
+        <div class="debrief-header">
+          <div class="debrief-stamp" id="modalRankBadge">★★★★★ FLEET ADMIRAL</div>
+          <h2 id="modalTitle" class="modal-headline">VICTORY</h2>
+          <p id="modalDesc" class="modal-sub">Hostile fleet eliminated. Sector dominance established.</p>
+        </div>
+
+        <div class="debrief-stats">
+          <div class="debrief-stat-card">
+            <span class="stat-name">SALVOES</span>
             <span class="stat-val" id="modalTurns">0</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">ACCURACY</span>
+          <div class="debrief-stat-card">
+            <span class="stat-name">ACCURACY</span>
             <span class="stat-val" id="modalAccuracy">0%</span>
           </div>
-          <div class="stat-item">
-            <span class="stat-label">SURVIVORS</span>
+          <div class="debrief-stat-card">
+            <span class="stat-name">SURVIVORS</span>
             <span class="stat-val" id="modalSurvivors">0/5</span>
           </div>
         </div>
-        <button id="playAgainBtn" class="action-btn primary-btn modal-btn">PLAY AGAIN</button>
+
+        <div class="debrief-share-preview" id="sharePreviewGrid" aria-hidden="true"></div>
+
+        <div class="debrief-buttons">
+          <button id="shareReportBtn" class="action-btn share-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span>SHARE MISSION REPORT</span>
+          </button>
+          <button id="playAgainBtn" class="action-btn primary-btn">
+            <span>START NEW CAMPAIGN</span>
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Micro Toast Notification -->
+    <div id="toastNotification" class="toast hidden" role="status" aria-live="polite"></div>
   </div>
 
   <script src="script.js"></script>
