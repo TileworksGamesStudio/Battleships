@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#040912" />
+  <title>BATTLESHIP // Naval Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,700;1,700&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="command-deck">
+
+    <!-- Top Master HUD Header -->
+    <header class="hud-header">
+      <div class="brand-cluster">
+        <span class="radar-sweep-icon"></span>
+        <h1 class="brand-title">BATTLESHIP</h1>
+      </div>
+      <div class="header-controls">
+        <button id="soundToggleBtn" class="hud-pill-btn" aria-label="Toggle Sound">
+          <span id="soundLabel">SND: ON</span>
+        </button>
+        <button id="menuOpenBtn" class="hud-pill-btn" aria-label="Tactical Options">
+          <span>OPTIONS</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ======================================================= -->
+    <!-- SCREEN 1: FLEET PLACEMENT DECK                          -->
+    <!-- ======================================================= -->
+    <section class="screen active" id="screenSetup">
+      <div class="screen-subbar">
+        <span class="subbar-tag">PHASE 1</span>
+        <span class="subbar-title" id="setupInstruction">POSITION YOUR SQUADRON</span>
+      </div>
+
+      <!-- Setup Grid Container -->
+      <div class="tactical-board-wrap">
+        <div class="axis-cols" id="setupAxisCols"></div>
+        <div class="matrix-row">
+          <div class="axis-rows" id="setupAxisRows"></div>
+          <div class="board-grid" id="setupGrid" role="grid" aria-label="Fleet Deployment Grid"></div>
+        </div>
+      </div>
+
+      <!-- Ship Manifest Bar -->
+      <div class="ship-manifest" id="shipManifest">
+        <!-- Rendered dynamically: 5 ships -->
+      </div>
+
+      <!-- Placement Actions -->
+      <div class="setup-actions">
+        <div class="action-btn-row">
+          <button id="rotateBtn" class="btn btn-secondary">
+            <span id="rotateIcon">⟳</span>
+            <span id="rotateText">ROT: HORIZ</span>
+          </button>
+          <button id="shuffleBtn" class="btn btn-secondary">
+            <span>🎲</span>
+            <span>SHUFFLE</span>
+          </button>
+          <button id="clearBtn" class="btn btn-secondary btn-danger">
+            <span>✕</span>
+            <span>CLEAR</span>
+          </button>
+        </div>
+
+        <button id="startBattleBtn" class="btn btn-primary btn-launch">
+          <span>COMMENCE BATTLE</span>
+          <span class="arrow-icon">▶</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- COUNTDOWN LAUNCH TRANSITION CURTAIN                     -->
+    <!-- ======================================================= -->
+    <div class="countdown-curtain hidden" id="countdownCurtain">
+      <div class="countdown-radar-ring"></div>
+      <div class="countdown-badge">RADAR LOCK COMMENCING</div>
+      <div class="countdown-digit" id="countdownDigit">3</div>
+      <div class="countdown-sub">SYNCHRONIZING TACTICAL DATA...</div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- SCREEN 2: COMBAT THEATER & RADAR                        -->
+    <!-- ======================================================= -->
+    <section class="screen" id="screenBattle">
+      <!-- Tactical Combat Log -->
+      <div class="combat-ticker-box">
+        <span class="ticker-blip" id="tickerBlip"></span>
+        <div class="ticker-message" id="combatTickerText">RADAR ACTIVE: ENGAGE HOSTILE SECTOR</div>
+      </div>
+
+      <!-- Offensive Arena with Corner Harbor Mini-Map -->
+      <div class="combat-arena">
+        <!-- Corner Defense Harbor Mini-Map (Player's Fleet) -->
+        <div class="defense-pip" id="defensePip">
+          <div class="pip-header">
+            <span class="pip-label">HARBOR</span>
+            <span class="pip-hp" id="harborIntegrity">100%</span>
+          </div>
+          <div class="pip-grid" id="playerMiniGrid" aria-label="Defense Fleet Harbor"></div>
+        </div>
+
+        <!-- Main Offensive Hostile Grid -->
+        <div class="tactical-board-wrap">
+          <div class="axis-cols" id="battleAxisCols"></div>
+          <div class="matrix-row">
+            <div class="axis-rows" id="battleAxisRows"></div>
+            <div class="board-grid hostile-grid" id="enemyRadarGrid" role="grid" aria-label="Hostile Radar Grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fleet Asset Readiness Bar -->
+      <div class="fleet-status-card">
+        <div class="status-col">
+          <div class="status-col-head">
+            <span class="team-tag enemy">ENEMY FORCES</span>
+            <span class="team-count" id="enemySunkCount">0/5 SUNK</span>
+          </div>
+          <div class="ship-pips-row" id="enemyShipPips"></div>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-col">
+          <div class="status-col-head">
+            <span class="team-tag friendly">OUR SQUADRON</span>
+            <span class="team-count" id="playerSunkCount">0/5 SUNK</span>
+          </div>
+          <div class="ship-pips-row" id="playerShipPips"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================= -->
+    <!-- MODAL: POST-BATTLE DEBRIEF                              -->
+    <!-- ======================================================= -->
+    <div class="tactical-modal hidden" id="gameOverModal">
+      <div class="modal-box debrief-box">
+        <div class="debrief-banner" id="debriefBanner">VICTORY</div>
+        <p class="debrief-subtitle" id="debriefSubtitle">Hostile armada neutralized.</p>
+
+        <div class="debrief-metrics">
+          <div class="metric-card">
+            <span class="metric-label">ROUNDS</span>
+            <span class="metric-value" id="statTurns">0</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">ACCURACY</span>
+            <span class="metric-value" id="statAccuracy">0%</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">SURVIVORS</span>
+            <span class="metric-value" id="statSurvivors">0/5</span>
+          </div>
+        </div>
+
+        <div class="modal-btn-stack">
+          <button id="rematchBtn" class="btn btn-primary">REMATCH (SAME HARBOR)</button>
+          <button id="redeployBtn" class="btn btn-secondary">NEW FLEET SETUP</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- MODAL: OPTIONS & DIFFICULTY                             -->
+    <!-- ======================================================= -->
+    <div class="tactical-modal hidden" id="optionsModal">
+      <div class="modal-box options-box">
+        <div class="options-title">TACTICAL COMMAND</div>
+
+        <div class="options-group">
+          <div class="option-row">
+            <span>SOUND FX</span>
+            <button id="optionsSoundToggle" class="hud-pill-btn">ENABLED</button>
+          </div>
+          <div class="option-row">
+            <span>AI DIFFICULTY</span>
+            <select id="optionsDifficulty" class="hud-select">
+              <option value="easy">ENSIGN (EASY)</option>
+              <option value="normal">CAPTAIN (NORMAL)</option>
+              <option value="hard">ADMIRAL (HARD)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-btn-stack">
+          <button id="optionsResumeBtn" class="btn btn-primary">RESUME</button>
+          <button id="optionsSurrenderBtn" class="btn btn-secondary btn-danger">SURRENDER MATCH</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
