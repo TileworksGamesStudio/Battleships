@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#030812" />
+  <title>BATTLESHIP — Aegis Naval Command</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Atmospheric Ocean Background -->
+  <div class="ocean-viewport" aria-hidden="true">
+    <div class="ocean-caustics"></div>
+    <div class="radar-scanline"></div>
+    <div class="vignette-layer"></div>
+  </div>
+
+  <!-- Dynamic Particle & Ballistics Canvas Layer -->
+  <canvas id="fxCanvas"></canvas>
+
+  <main class="app-layout">
+    <!-- Top Command Deck -->
+    <header class="command-header">
+      <div class="brand-cluster">
+        <div class="insignia-box">
+          <svg viewBox="0 0 32 32" class="insignia-icon">
+            <polygon points="16,2 30,10 30,22 16,30 2,22 2,10" fill="none" stroke="currentColor" stroke-width="2" />
+            <circle cx="16" cy="16" r="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" />
+            <line x1="16" y1="4" x2="16" y2="28" stroke="currentColor" stroke-width="1.5" />
+            <line x1="4" y1="16" x2="28" y2="16" stroke="currentColor" stroke-width="1.5" />
+          </svg>
+          <div class="insignia-pulse"></div>
+        </div>
+        <div class="brand-titles">
+          <div class="brand-super">AEGIS COMBAT SYSTEM // TACTICAL THEATER</div>
+          <h1 class="brand-title">BATTLESHIP</h1>
+        </div>
+      </div>
+
+      <!-- Live Tactical Telemetry HUD -->
+      <div class="tactical-hud">
+        <div class="hud-group">
+          <span class="hud-label">YOUR FLEET</span>
+          <div class="fleet-status-pills" id="playerFleetPills">
+            <div class="pill-ship" data-ship="carrier" title="Carrier (5)"></div>
+            <div class="pill-ship" data-ship="battleship" title="Battleship (4)"></div>
+            <div class="pill-ship" data-ship="cruiser" title="Cruiser (3)"></div>
+            <div class="pill-ship" data-ship="submarine" title="Submarine (3)"></div>
+            <div class="pill-ship" data-ship="destroyer" title="Destroyer (2)"></div>
+          </div>
+        </div>
+
+        <div class="hud-divider"></div>
+
+        <div class="hud-group">
+          <span class="hud-label">HOSTILE CONTACTS</span>
+          <div class="fleet-status-pills enemy-pills" id="enemyFleetPills">
+            <div class="pill-ship" data-ship="carrier" title="Carrier (5)"></div>
+            <div class="pill-ship" data-ship="battleship" title="Battleship (4)"></div>
+            <div class="pill-ship" data-ship="cruiser" title="Cruiser (3)"></div>
+            <div class="pill-ship" data-ship="submarine" title="Submarine (3)"></div>
+            <div class="pill-ship" data-ship="destroyer" title="Destroyer (2)"></div>
+          </div>
+        </div>
+
+        <div class="hud-divider"></div>
+
+        <div class="hud-stat-box">
+          <span class="hud-label">ACCURACY</span>
+          <span class="hud-val" id="hudAccuracy">0%</span>
+        </div>
+
+        <div class="hud-stat-box">
+          <span class="hud-label">TURN</span>
+          <span class="hud-val" id="hudTurns">01</span>
+        </div>
+
+        <!-- Audio & Settings Toggles -->
+        <div class="header-tools">
+          <button class="tool-btn" id="soundToggleBtn" aria-label="Toggle Sound" title="Audio Systems">
+            <svg id="soundIconOn" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+            <svg id="soundIconOff" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <line x1="23" y1="9" x2="17" y2="15"></line>
+              <line x1="17" y1="9" x2="23" y2="15"></line>
+            </svg>
+          </button>
+          <button class="tool-btn" id="helpModalBtn" aria-label="Tactical Rules" title="Mission Briefing">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Situational Banner & Threat Status -->
+    <section class="ticker-banner">
+      <div class="ticker-beacon" id="tickerBeacon"></div>
+      <div class="ticker-readout">
+        <span class="ticker-tag" id="tickerTag">SEC_LEVEL: ALPHA</span>
+        <span class="ticker-msg" id="tickerMsg">Awaiting deployment instructions. Position your combat group.</span>
+      </div>
+      <div class="game-mode-selector" id="modeSelectorWrap">
+        <label for="aiDifficultySelect" class="mode-label">AI ADVERSARY:</label>
+        <select id="aiDifficultySelect" class="tactical-select">
+          <option value="recruit">ENSIGN (EASY)</option>
+          <option value="captain" selected>CAPTAIN (TACTICAL)</option>
+          <option value="admiral">FLEET ADMIRAL (PROBABILITY)</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Battle Grids Arena -->
+    <div class="theater-grid">
+      <!-- Target Zone: Enemy Waters -->
+      <article class="tactical-board-card enemy-theater" id="enemyCard">
+        <div class="card-glass-glow"></div>
+        <header class="theater-header">
+          <div class="theater-badge">
+            <span class="badge-dot"></span>
+            <h2>OFFENSIVE GRID // TARGET WATERS</h2>
+          </div>
+          <span class="grid-subtext" id="enemySubtext">STRIKE AUTHORIZED</span>
+        </header>
+
+        <div class="grid-enclosure">
+          <!-- Col coordinate headers (A-J) -->
+          <div class="coords-x" id="enemyCoordsX"></div>
+          
+          <div class="grid-with-y">
+            <!-- Row coordinate headers (1-10) -->
+            <div class="coords-y" id="enemyCoordsY"></div>
+            <!-- Interactive 10x10 Target Board -->
+            <div class="board-matrix" id="enemyGrid" role="grid" aria-label="Enemy Sector Grid"></div>
+          </div>
+        </div>
+
+        <!-- Tactical Strike & Ability Deck -->
+        <div class="tactical-deck" id="tacticalDeck">
+          <div class="ability-energy-bar">
+            <div class="energy-info">
+              <span class="energy-label">COMMAND ENERGY</span>
+              <span class="energy-num" id="energyVal">0 / 100</span>
+            </div>
+            <div class="energy-track">
+              <div class="energy-fill" id="energyFill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div class="ability-actions">
+            <button class="ability-btn" id="sonarBtn" data-cost="35" title="Scans a 3x3 sector for submerged vessel hulls" disabled>
+              <div class="ability-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <line x1="12" y1="2" x2="12" y2="12"></line>
+                </svg>
+              </div>
+              <div class="ability-meta">
+                <span class="ability-name">SONAR PING</span>
+                <span class="ability-cost">35 CP</span>
+              </div>
+            </button>
+
+            <button class="ability-btn" id="airReconBtn" data-cost="60" title="Scans an entire hostile cross-section (Row + Column)" disabled>
+              <div class="ability-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3.5c-.5-.5-2.5 0-4 1.5L13.5 8.5 5.3 6.7c-.7-.1-1.3.4-1.2 1.1l.9 4.2-3 3 1.4 1.4 3.5-1.1 3 3L9 22l1.4 1.4 3-3 4.2.9c.7.1 1.2-.5 1.1-1.2l-.9-1.9z"></path>
+                </svg>
+              </div>
+              <div class="ability-meta">
+                <span class="ability-name">AIR RECON</span>
+                <span class="ability-cost">60 CP</span>
+              </div>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Defense Zone: Player Waters -->
+      <article class="tactical-board-card player-theater" id="playerCard">
+        <div class="card-glass-glow"></div>
+        <header class="theater-header">
+          <div class="theater-badge">
+            <span class="badge-dot"></span>
+            <h2>FRIENDLY GRID // DEFENSE SECTOR</h2>
+          </div>
+          <span class="grid-subtext" id="playerSubtext">DISPOSITION OPTIMAL</span>
+        </header>
+
+        <div class="grid-enclosure">
+          <div class="coords-x" id="playerCoordsX"></div>
+          <div class="grid-with-y">
+            <div class="coords-y" id="playerCoordsY"></div>
+            <!-- 10x10 Player Fleet Board -->
+            <div class="board-matrix" id="playerGrid" role="grid" aria-label="Friendly Sector Grid"></div>
+          </div>
+        </div>
+
+        <!-- Placement Hangar & Fleet Staging -->
+        <div class="hangar-bay" id="hangarBay">
+          <div class="hangar-controls">
+            <div class="hangar-title">
+              <span>FLEET STAGING DOCK</span>
+              <small id="hangarHint">Drag or select a ship to deploy</small>
+            </div>
+            <div class="hangar-actions">
+              <button class="action-btn" id="rotateShipBtn" title="Change placement axis (Shortcut: R or Space)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24L21 8"></path>
+                  <polyline points="21 3 21 8 16 8"></polyline>
+                </svg>
+                <span id="orientationLabel">ROTATE (H)</span>
+              </button>
+              <button class="action-btn" id="autoDeployBtn" title="Automatically deploy fleet">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+                <span>AUTO DOCK</span>
+              </button>
+              <button class="action-btn danger-btn" id="resetFleetBtn" title="Clear all placed ships">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span>RESET</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="ship-dock-tray" id="shipDockTray">
+            <!-- Dynamic interactive warship cards injected by script -->
+          </div>
+        </div>
+
+        <!-- Real-Time Combat Log Stream -->
+        <div class="terminal-log-wrap" id="combatLogWrap">
+          <div class="terminal-head">
+            <span class="term-pulse"></span>
+            <span>TACTICAL COMMS STREAM</span>
+          </div>
+          <div class="terminal-feed" id="combatLogFeed">
+            <div class="log-entry sys">SYSTEM INITIALIZED: Awaiting operational orders.</div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Main Mission Controls Bar -->
+    <footer class="command-footer">
+      <button class="launch-btn" id="commenceBattleBtn" disabled>
+        <span class="btn-shine"></span>
+        <span class="btn-text">COMMENCE ENGAGEMENT</span>
+      </button>
+    </footer>
+
+    <!-- After Action Report / Victory Modal -->
+    <div class="tactical-modal" id="aarModal" aria-hidden="true">
+      <div class="modal-scrim" data-close-modal></div>
+      <div class="aar-dialog">
+        <div class="dialog-banner" id="aarBanner">MISSION ACCOMPLISHED</div>
+        
+        <div class="aar-content">
+          <div class="aar-emblem-wrap">
+            <div class="aar-emblem" id="aarEmblem">
+              <svg viewBox="0 0 24 24" class="aar-svg-icon" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+              </svg>
+            </div>
+            <h3 class="aar-title" id="aarTitle">FLEET VICTORY</h3>
+            <p class="aar-narrative" id="aarNarrative">All enemy naval assets have been neutralized. Sector secured.</p>
+          </div>
+
+          <div class="aar-telemetry-grid">
+            <div class="telemetry-card">
+              <span class="tel-label">ACCURACY</span>
+              <span class="tel-val" id="aarAccuracy">0%</span>
+            </div>
+            <div class="telemetry-card">
+              <span class="tel-label">TOTAL SHOTS</span>
+              <span class="tel-val" id="aarShots">0</span>
+            </div>
+            <div class="telemetry-card">
+              <span class="tel-label">TURNS TAKEN</span>
+              <span class="tel-val" id="aarTurns">0</span>
+            </div>
+            <div class="telemetry-card">
+              <span class="tel-label">SHIPS LOST</span>
+              <span class="tel-val" id="aarShipsLost">0 / 5</span>
+            </div>
+          </div>
+
+          <div class="aar-medal-strip" id="aarMedalStrip">
+            <!-- Badges dynamically rendered -->
+          </div>
+
+          <div class="aar-actions">
+            <button class="modal-primary-btn" id="aarPlayAgainBtn">RE-ENGAGE FLEET</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Operations & Rules Briefing Modal -->
+    <div class="tactical-modal" id="rulesModal" aria-hidden="true">
+      <div class="modal-scrim" data-close-modal></div>
+      <div class="aar-dialog rules-dialog">
+        <button class="dialog-close-btn" data-close-modal aria-label="Close modal">×</button>
+        <div class="dialog-banner">MISSION BRIEFING // PROTOCOL 104</div>
+        <div class="aar-content rules-content">
+          <div class="briefing-section">
+            <h4>1. FLEET DEPLOYMENT</h4>
+            <p>Drag your 5 combat vessels into your grid or click on them in the dock and tap your sector to place. Use <b>Rotate</b> (or press <kbd>R</kbd> / <kbd>Space</kbd>) to alter ship axis. Ships must remain within sector coordinates and cannot overlap.</p>
+          </div>
+          <div class="briefing-section">
+            <h4>2. OFFENSIVE ENGAGEMENT</h4>
+            <p>Once deployed, tap any coordinate cell in <b>Hostile Waters</b> to launch artillery strikes. A green radar pip denotes a <b>Miss</b>; a crimson fireball denotes a direct <b>Hit</b>. When all segments of a warship are destroyed, the vessel sinks.</p>
+          </div>
+          <div class="briefing-section">
+            <h4>3. TACTICAL COMMAND WARFARE</h4>
+            <p>Landing hits and exchanging fire accumulates <b>Command Energy</b>. Use it to unleash special combat options:</p>
+            <ul>
+              <li><b>Sonar Ping (35 CP):</b> Reveals the total number of hostile vessel segments inside a designated 3×3 zone.</li>
+              <li><b>Air Recon (60 CP):</b> Reveals coordinates along an entire horizontal & vertical crosshair.</li>
+            </ul>
+          </div>
+          <div class="briefing-section">
+            <h4>4. ADVERSARY INTEL (AI)</h4>
+            <p>Choose your opponent's battle capability from the top selector: <b>Ensign</b> for classic tactical gameplay, <b>Captain</b> for aggressive hunter-seeker strikes, or <b>Fleet Admiral</b> for high-tier real-time Probability Density Matrix targeting.</p>
+          </div>
+          <button class="modal-primary-btn" data-close-modal>CONFIRM & CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- In-Game Status Alert Toast -->
+    <div class="alert-toast" id="alertToast" role="alert"></div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
